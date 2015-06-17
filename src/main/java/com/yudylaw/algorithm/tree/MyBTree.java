@@ -97,7 +97,7 @@ public class MyBTree {
         }
         
         parentNode.insertEntry(index, entry);
-        parentNode.insertChild(index, siblingNode);
+        parentNode.insertChild(index + 1, siblingNode);
     }
     
     /**
