@@ -758,7 +758,7 @@ public class BTree<K, V>
 					}
 					else // 右兄弟节点满足条件
 					{
-						childNode.insertEntry(node.entryAt(result.getIndex()), childNode.size() - 1);//上项下移
+						childNode.insertEntry(node.entryAt(result.getIndex()), childNode.size());//上项下移
 						node.removeEntry(result.getIndex());
 						node.insertEntry(siblingNode.entryAt(0), result.getIndex());//右兄弟上移
 						siblingNode.removeEntry(0);

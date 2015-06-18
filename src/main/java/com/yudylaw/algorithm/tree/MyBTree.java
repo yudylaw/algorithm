@@ -187,8 +187,7 @@ public class MyBTree {
                     }
                     else // 右兄弟节点满足条件
                     {
-                        //TODO BUG 项顺序不对
-                        childNode.insertEntry(childNode.size() - 1, node.getEntry(result.getIndex()));//上项下移
+                        childNode.insertEntry(childNode.size(), node.getEntry(result.getIndex()));//上项下移
                         node.removeEntry(result.getIndex());
                         node.insertEntry(result.getIndex(), siblingNode.getEntry(0));//右兄弟上移
                         siblingNode.removeEntry(0);
@@ -604,7 +603,11 @@ public class MyBTree {
         tree.insert(1L, 10L);
         tree.insert(2L, 10L);
         tree.insert(3L, 10L);//分裂到2层
-        tree.remove(0L);
+        tree.insert(4L, 10L);
+        tree.insert(5L, 10L);
+        tree.output();
+        System.out.println("---------------------");
+        tree.remove(6L);
         tree.output();
     }
     
