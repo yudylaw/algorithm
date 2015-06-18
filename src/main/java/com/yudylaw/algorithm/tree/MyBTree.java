@@ -69,8 +69,10 @@ public class MyBTree {
      * 2.a)假设左边有多余的，按照这个递归算法，去删除左边子树的最大的节点，来顶替这个要删除的节点。(最大项上移)
      * 2.b)如果右边有多余的，就采用右边最小的。(最小项上移动)
      * 2.c)如果左右两个子树的树根都等于t-1，那么合并之，再删除。
-     * 如果要的数据不在自己身上，就判断出会在哪个子节点上。
-     * 如果这个子节点等于t-1，就看他的兄弟节点能不能借数据给他。如果不能借，就把这个子树合并。
+     * 3)如果要的数据不在自己身上，就判断出会在哪个子节点上。
+     * 3.a)如果这个子节点项数>=t, 那么直接递归删除
+     * 3.b)如果这个子节点项数等于t-1，就看他的兄弟节点能不能借数据给他。
+     * 3.c)如果不能借，就把这个子树合并。
      * 总之，无论如何，保证这个要删除的子树的沿路永远有可以借出的数据。用来确保树不变形。
      * @param node
      * @param key
@@ -130,7 +132,7 @@ public class MyBTree {
                     }
                 }
             }
-        }else{
+        }else{ //3
             /*
              * 因为这是查找失败的情况，0 <= result.getIndex() <= node.size()，
              * 因此(result.getIndex() + 1)会溢出。
@@ -140,10 +142,10 @@ public class MyBTree {
                 System.out.println("The key: " + key + " isn't in this BTree.");
                 return null;
             }
-            Node childNode = node.getChildNode(result.getIndex());//TODO ???
+            Node childNode = node.getChildNode(result.getIndex());//根据二分法,key 肯定存在于该 index 路径中
             if(childNode.size() >= T) // // 如果子节点有不少于t个项，则递归删除
-                return remove(childNode, key);
-            else // 3
+                return remove(childNode, key); // 3.a
+            else 
             {
                 //从兄弟节点中项 >= T 的借节点
                 // 先查找右边的兄弟节点
@@ -169,7 +171,7 @@ public class MyBTree {
                         }
                     }
                 }
-                // 3.a 有一个相邻兄弟节点至少包含t个项
+                // 3.b 有一个相邻兄弟节点至少包含t个项
                 if(siblingNode != null)
                 {
                     if(siblingIndex < result.getIndex()) // 左兄弟节点满足条件
@@ -201,7 +203,7 @@ public class MyBTree {
                     }
                     return remove(childNode, key);
                 }
-                else // 3.b 如果其相邻左右节点都包含t-1个项, 则合并左右子树
+                else // 3.c 如果其相邻左右节点都包含t-1个项, 则合并左右子树
                 {
                     if(result.getIndex() < node.size()) // 存在右兄弟，直接在后面追加
                     {
