@@ -1,7 +1,6 @@
 package com.yudylaw.algorithm.tree;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,6 +57,188 @@ public class MyBTree {
             rootNode = newNode;
         }
         return insertNotFull(rootNode, new Entry<Long, Long>(key, value));
+    }
+    
+    public Entry<Long,Long> remove(Long key) {
+        return remove(rootNode, key);
+    }
+    
+    /**
+     * 1)btree在删除节点的时复杂一点，但是逻辑是，从上到下搜索，先看自己是不是叶子节点，如果是，数据直接删除（一开始就发现自己是叶子节点除非只有一个树根）
+     * 2)如果不是，再看数据是不是在自己这个节点上。如果在自己身上，就检查这个节点的左右子节点哪个子节点的数据大于t-1,
+     * 2.a)假设左边有多余的，按照这个递归算法，去删除左边子树的最大的节点，来顶替这个要删除的节点。(最大项上移)
+     * 2.b)如果右边有多余的，就采用右边最小的。(最小项上移动)
+     * 2.c)如果左右两个子树的树根都等于t-1，那么合并之，再删除。
+     * 如果要的数据不在自己身上，就判断出会在哪个子节点上。
+     * 如果这个子节点等于t-1，就看他的兄弟节点能不能借数据给他。如果不能借，就把这个子树合并。
+     * 总之，无论如何，保证这个要删除的子树的沿路永远有可以借出的数据。用来确保树不变形。
+     * @param node
+     * @param key
+     * @return
+     */
+    private Entry<Long,Long> remove(Node node, Long key) {
+        // 该过程需要保证，对非根节点执行删除操作时，其关键字个数至少为t。
+        assert node.size() >= T || node == rootNode;
+        
+        SearchResult result = node.searchKey(key);
+        /*
+         * 因为这是查找成功的情况，0 <= result.getIndex() <= (node.size() - 1)，
+         * 因此(result.getIndex() + 1)不会溢出。
+         */
+        if(result.isExist()){
+            // 1.如果关键字在节点node中，并且是叶节点，则直接删除。
+            if(node.isLeaf()){
+                return node.removeEntry(result.getIndex());
+            }else{
+                // 2.a 如果节点node中前于key的子节点包含至少t个项 (意味着删除一项,仍满足btree约束, 同时需要递归删除子节点)
+                Node leftChildNode = node.getChildNode(result.getIndex());
+                if(leftChildNode.size() >= T)
+                {
+                    // 使用leftChildNode中的最后一个项代替node中需要删除的项
+                    node.removeEntry(result.getIndex());
+                    //左节点最大项上移
+                    node.insertEntry(result.getIndex(), leftChildNode.getEntry(leftChildNode.size() - 1));
+                    // 递归删除左子节点中的最后一个项
+                    return remove(leftChildNode, leftChildNode.getEntry(leftChildNode.size() - 1).getK());
+                } else {
+                    // 2.b 如果节点node中后于key的子节点包含至少t个关键字
+                    Node rightChildNode = node.getChildNode(result.getIndex() + 1);
+                    if(rightChildNode.size() >= T)
+                    {
+                        // 使用rightChildNode中的第一个项代替node中需要删除的项
+                        node.removeEntry(result.getIndex());
+                        node.insertEntry(result.getIndex(), rightChildNode.getEntry(0));//右边最小节点来替换
+                        // 递归删除右子节点中的第一个项
+                        return remove(rightChildNode, rightChildNode.getEntry(0).getK());
+                    }
+                    else // 2.c 前于key和后于key的子节点都只包含t-1个项
+                    {
+                        Entry<Long, Long> deletedEntry = node.removeEntry(result.getIndex());
+                        node.removeChild(result.getIndex() + 1);
+                        // 将node中与key关联的项和rightChildNode中的项合并进leftChildNode
+                        leftChildNode.addEntry(deletedEntry);
+                        for(int i = 0; i < rightChildNode.size(); ++ i)
+                            leftChildNode.addEntry(rightChildNode.getEntry(i));
+                        // 将rightChildNode中的子节点合并进leftChildNode，如果有的话
+                        if(!rightChildNode.isLeaf())
+                        {
+                            for(int i = 0; i <= rightChildNode.size(); ++ i)
+                                leftChildNode.addChild(rightChildNode.getChildNode(i));
+                        }
+                        //被删除项已经下移到左节点, 递归删除,知道叶子节点
+                        return remove(leftChildNode, key);
+                    }
+                }
+            }
+        }else{
+            /*
+             * 因为这是查找失败的情况，0 <= result.getIndex() <= node.size()，
+             * 因此(result.getIndex() + 1)会溢出。
+             */
+            if(node.isLeaf()) // 如果关键字不在节点node中，并且是叶节点，则什么都不做，因为该关键字不在该B树中
+            {
+                System.out.println("The key: " + key + " isn't in this BTree.");
+                return null;
+            }
+            Node childNode = node.getChildNode(result.getIndex());//TODO ???
+            if(childNode.size() >= T) // // 如果子节点有不少于t个项，则递归删除
+                return remove(childNode, key);
+            else // 3
+            {
+                //从兄弟节点中项 >= T 的借节点
+                // 先查找右边的兄弟节点
+                Node siblingNode = null;
+                int siblingIndex = -1;
+                if(result.getIndex() < node.size()) // 存在右兄弟节点
+                {
+                    if(node.getChildNode(result.getIndex() + 1).size() >= T)
+                    {
+                        siblingNode = node.getChildNode(result.getIndex() + 1);
+                        siblingIndex = result.getIndex() + 1;
+                    }
+                }
+                // 如果右边的兄弟节点不符合条件，则试试左边的兄弟节点
+                if(siblingNode == null)
+                {
+                    if(result.getIndex() > 0) // 存在左兄弟节点
+                    {
+                        if(node.getChildNode(result.getIndex() - 1).size() >= T)
+                        {
+                            siblingNode = node.getChildNode(result.getIndex() - 1);
+                            siblingIndex = result.getIndex() - 1;
+                        }
+                    }
+                }
+                // 3.a 有一个相邻兄弟节点至少包含t个项
+                if(siblingNode != null)
+                {
+                    if(siblingIndex < result.getIndex()) // 左兄弟节点满足条件
+                    {
+                        childNode.insertEntry(0, node.getEntry(siblingIndex));
+                        node.removeEntry(siblingIndex);
+                        node.insertEntry(siblingIndex, siblingNode.getEntry(siblingNode.size() - 1));
+                        siblingNode.removeEntry(siblingNode.size() - 1);
+                        // 将左兄弟节点的最后一个孩子移到childNode
+                        if(!siblingNode.isLeaf())
+                        {
+                            childNode.insertChild(0, siblingNode.getChildNode(siblingNode.size()));
+                            siblingNode.removeChild(siblingNode.size());
+                        }
+                    }
+                    else // 右兄弟节点满足条件
+                    {
+                        //TODO BUG 项顺序不对
+                        childNode.insertEntry(childNode.size() - 1, node.getEntry(result.getIndex()));//上项下移
+                        node.removeEntry(result.getIndex());
+                        node.insertEntry(result.getIndex(), siblingNode.getEntry(0));//右兄弟上移
+                        siblingNode.removeEntry(0);
+                        // 将右兄弟节点的第一个孩子移到childNode
+                        // childNode.insertChild(siblingNode.childAt(0), childNode.size() + 1);
+                        if(!siblingNode.isLeaf())
+                        {
+                            childNode.addChild(siblingNode.getChildNode(0));
+                            siblingNode.removeChild(0);
+                        }
+                    }
+                    return remove(childNode, key);
+                }
+                else // 3.b 如果其相邻左右节点都包含t-1个项, 则合并左右子树
+                {
+                    if(result.getIndex() < node.size()) // 存在右兄弟，直接在后面追加
+                    {
+                        Node rightSiblingNode = node.getChildNode(result.getIndex() + 1);
+                        childNode.addEntry(node.getEntry(result.getIndex()));//下移
+                        node.removeEntry(result.getIndex());
+                        node.removeChild(result.getIndex() + 1);
+                        for(int i = 0; i < rightSiblingNode.size(); ++ i)
+                            childNode.addEntry(rightSiblingNode.getEntry(i));
+                        if(!rightSiblingNode.isLeaf())
+                        {
+                            for(int i = 0; i <= rightSiblingNode.size(); ++ i)
+                                childNode.addChild(rightSiblingNode.getChildNode(i));
+                        }
+                    }
+                    else // 存在左节点，在前面插入
+                    {
+                        Node leftSiblingNode = node.getChildNode(result.getIndex() - 1);
+                        childNode.insertEntry(0, node.getEntry(result.getIndex() - 1));
+                        node.removeEntry(result.getIndex() - 1);
+                        node.removeChild(result.getIndex() - 1);
+                        for(int i = leftSiblingNode.size() - 1; i >= 0; -- i)
+                            childNode.insertEntry(0, leftSiblingNode.getEntry(i));
+                        if(!leftSiblingNode.isLeaf())
+                        {
+                            for(int i = leftSiblingNode.size(); i >= 0; -- i)
+                                childNode.insertChild(0, leftSiblingNode.getChildNode(i));
+                        }
+                    }
+                    // 如果node是root并且node不包含任何项了
+                    if(node == rootNode && node.size() == 0)
+                        rootNode = childNode;
+                    return remove(childNode, key);
+                }
+            }
+        }
     }
     
     /**
@@ -223,7 +404,7 @@ public class MyBTree {
         public void setEntries(List<Entry<Long, Long>> entries) {
             this.entries = entries;
         }
-
+        
         public List<Node> getChildren() {
             return children;
         }
@@ -238,6 +419,14 @@ public class MyBTree {
 
         public void setLeaf(boolean isLeaf) {
             this.isLeaf = isLeaf;
+        }
+        
+        public boolean isEmpty() {
+            return entries.isEmpty();
+        }
+        
+        public int size() {
+            return entries.size();
         }
         
         public boolean isFull() {
@@ -257,6 +446,10 @@ public class MyBTree {
             children.add(index, node);
         }
         
+        public void removeChild(int index) {
+            children.remove(index);
+        }
+        
         public void addChild(Node node) {
             assert children.size() <= MAX_POINT;
             children.add(node);
@@ -264,6 +457,10 @@ public class MyBTree {
         
         public Node getChildNode(int index) {
             return children.get(index);
+        }
+        
+        public Entry<Long,Long> removeEntry(int index) {
+            return entries.remove(index);
         }
         
         public Entry<Long,Long> getEntry(int index) {
@@ -396,23 +593,34 @@ public class MyBTree {
     
     public static void main(String[] args) {
         //B-Tree 不同插入顺序，结点位置不同，但是遵循平衡树的特征
-        testDescInsert();
+//        testDescInsert();
 //        testAscInsert();
+        testRemove();
     }
 
+    private static void testRemove() {
+        MyBTree tree = new MyBTree();
+        tree.insert(0L, 10L);
+        tree.insert(1L, 10L);
+        tree.insert(2L, 10L);
+        tree.insert(3L, 10L);//分裂到2层
+        tree.remove(0L);
+        tree.output();
+    }
+    
     private static void testDescInsert() {
         MyBTree tree = new MyBTree();
         tree.insert(9L, 10L);
         tree.insert(8L, 10L);
         tree.insert(7L, 10L);
         tree.insert(6L, 10L);//分裂到2层
-//        tree.insert(5L, 10L);
-//        tree.insert(4L, 10L);//分裂
+        tree.insert(5L, 10L);
+        tree.insert(4L, 10L);//分裂
 //        //key乱序了
-//        tree.insert(3L, 10L);
-//        tree.insert(2L, 10L);//分裂
-//        tree.insert(1L, 10L);
-//        tree.insert(0L, 10L);
+        tree.insert(3L, 10L);
+        tree.insert(2L, 10L);//分裂
+        tree.insert(1L, 10L);
+        tree.insert(0L, 10L);
         tree.output();
     }
     

@@ -716,6 +716,7 @@ public class BTree<K, V>
 				return delete(childNode, key);
 			else // 3
 			{
+			    //从兄弟节点中项 >= T 的借节点
 				// 先查找右边的兄弟节点
 				BTreeNode<K, V> siblingNode = null;
 				int siblingIndex = -1;
@@ -757,9 +758,9 @@ public class BTree<K, V>
 					}
 					else // 右兄弟节点满足条件
 					{
-						childNode.insertEntry(node.entryAt(result.getIndex()), childNode.size() - 1);
+						childNode.insertEntry(node.entryAt(result.getIndex()), childNode.size() - 1);//上项下移
 						node.removeEntry(result.getIndex());
-						node.insertEntry(siblingNode.entryAt(0), result.getIndex());
+						node.insertEntry(siblingNode.entryAt(0), result.getIndex());//右兄弟上移
 						siblingNode.removeEntry(0);
 						// 将右兄弟节点的第一个孩子移到childNode
 						// childNode.insertChild(siblingNode.childAt(0), childNode.size() + 1);
@@ -771,12 +772,12 @@ public class BTree<K, V>
 					}
 					return delete(childNode, key);
 				}
-				else // 3.b 如果其相邻左右节点都包含t-1个项
+				else // 3.b 如果其相邻左右节点都包含t-1个项, 则合并左右子树
 				{
 					if(result.getIndex() < node.size()) // 存在右兄弟，直接在后面追加
 					{
 						BTreeNode<K, V> rightSiblingNode = node.childAt(result.getIndex() + 1);
-						childNode.addEntry(node.entryAt(result.getIndex()));
+						childNode.addEntry(node.entryAt(result.getIndex()));//下移
 						node.removeEntry(result.getIndex());
 						node.removeChild(result.getIndex() + 1);
 						for(int i = 0; i < rightSiblingNode.size(); ++ i)
