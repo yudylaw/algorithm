@@ -14,11 +14,12 @@ public class MergeSort {
 //		int[] leftArr = {7,8,10,23,100};//有序
 //		int[] rightArr = {9,11,20,99,1299};//有序
 		
-//		int[] numbres = {0,3,44,2,3,34,5,42,23,1001,1001,333};
-//		int[] result = mergeSort(numbres);
+		int[] numbres = {0,3,44,2,3,34,5,42,23,1001,1001,333};
+		int[] result = mergeSort(numbres);
 		
-		int[] numbres = {0,3,44,2,3,34};
-		int[] result = merge2(numbres, 0, 2, 5);
+//		int[] numbres = {0,3,44,2,3,34};
+//		int[] result = merge2(numbres, 0, 2, 5);
+		
 		for (int r : result) {
 			System.out.println(r);
 		}
@@ -46,20 +47,29 @@ public class MergeSort {
 	
 	//[l,m],[m+1,r] 已经排序好
 	public static int[] merge2(int[] nums, int l, int m, int r) {
-		int tmp = 0;
-		int right = m + 1;
-		for (int i = l; i <= r; i++) {
-			tmp = nums[i];
-			//TODO bug
-			if (right > r || (l <= m && nums[l] <= nums[right])) {
-				nums[i] = nums[l];
-				nums[l] = tmp;
-				l++;
-			} else {
-				nums[i] = nums[right];
-				nums[right] = tmp;
-				right++;
+		if (r - l == 1) {
+			return nums;
+		}
+		int[] leftArr = Arrays.copyOfRange(nums, l, m + 1);
+		int[] rightArr = Arrays.copyOfRange(nums, m + 1, r + 1);
+		//合并复杂度 O(n)
+		int start = l;
+		int end = r;
+		l = 0;
+		r = 0;
+		for (int i=start;i <= end;i++) {
+			
+			if (l == leftArr.length || ( r < rightArr.length && leftArr[l] >= rightArr[r])) {
+				nums[i] = rightArr[r];
+				r++;
+				continue;
 			}
+			
+			if (r == rightArr.length || (l < leftArr.length && leftArr[l] < rightArr[r])) {
+				nums[i] = leftArr[l];
+				l++;
+			}
+			
 		}
 		return nums;
 	}
