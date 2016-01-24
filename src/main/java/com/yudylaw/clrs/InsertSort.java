@@ -4,6 +4,7 @@ package com.yudylaw.clrs;
 /**
  * @author liuyu3@xiaomi.com
  * @since 2015年12月28日
+ * 算法复杂度O(N^2)
  */
 
 public class InsertSort {
