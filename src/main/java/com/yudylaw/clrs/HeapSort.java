@@ -12,11 +12,15 @@ package com.yudylaw.clrs;
 public class HeapSort {
 
     public static void main(String[] args) {
-        int[] values = {0,11,1,5,7,10,28,100};
+        int[] values = {0,11,1,5,7,10,28,100,-1,-1,-1};
         
-//        buildMaxHeap(values);
+        buildMaxHeap(values);
         
-        heapSort(values);
+        int heapSize = 8;
+//        int max = extractMax(values, heapSize);
+//        heapSort(values, heapSize);
+
+        increaseKey(values, heapSize, 5, 12);//7->12
         
         for (int value : values) {
             System.out.println(value);
@@ -68,10 +72,9 @@ public class HeapSort {
         }
     }
     
-    public static void heapSort(int[] values) {
+    public static void heapSort(int[] values, int heapSize) {
         //构建最大堆
         buildMaxHeap(values);
-        int heapSize = values.length;
         while (heapSize > 1) {
             //移动堆根节点
             int max = values[0];
@@ -81,6 +84,77 @@ public class HeapSort {
             //维持最大堆
             maxHeap(values, 1, heapSize);
         }
+    }
+    
+    
+    /**
+     * priority queue insert
+     * 
+     * @param values
+     * @param heapSize
+     * @param val
+     */
+    public static void insert(int[] values, int heapSize, int val) {
+        if (heapSize >= values.length) {
+            throw new IllegalArgumentException("heapSize cannot bigger than length of values");
+        }
+        for (int i =0;i < heapSize;i++) {
+            if (val >= values[i]) {
+                
+            }
+        }
+        int max = values[0];
+        values[0] = val;
+        values[heapSize] = max;
+        maxHeap(values, 1, heapSize + 1);
+    }
+    
+    /**
+     * priority queue extract max
+     * 
+     * @param values
+     * @return
+     */
+    public static int extractMax(int[] values, int heapSize) {
+        int max = values[0];
+        //把小节点放作为根
+        values[0] = values[heapSize - 1];
+        //新的最大堆
+        maxHeap(values, 1, heapSize - 1);
+        return max;
+    }
+    
+    /**
+     * priority queue increase key
+     * <p>前提: val > values[index-1]</p>
+     * @param values
+     * @param heapSize
+     * @param index
+     * @param val
+     */
+    public static void increaseKey(int[] values, int heapSize, int index, int val) {
+        if (val <= values[index-1]) {
+            throw new IllegalArgumentException("illeal arguments");
+        }
+        if (heapSize > values.length || index > heapSize) {
+            throw new IllegalArgumentException("illeal arguments");
+        }
+        
+        values[index -1] = val;
+        
+        while (index > 1) {
+            int parent = index >> 1;
+            if (values[index -1] > values[parent -1]) {
+                //swap index with parent
+                int tmp = values[parent -1];
+                values[parent -1] = values[index -1];
+                values[index -1] = tmp;
+                index = parent;
+            } else {
+                break;
+            }
+        }
+
     }
 
 }
