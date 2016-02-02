@@ -12,9 +12,11 @@ package com.yudylaw.clrs;
 public class HeapSort {
 
     public static void main(String[] args) {
-        int[] values = {11,1,5,7,10,28,100};
+        int[] values = {0,11,1,5,7,10,28,100};
         
-        buildMaxHeap(values);
+//        buildMaxHeap(values);
+        
+        heapSort(values);
         
         for (int value : values) {
             System.out.println(value);
@@ -25,29 +27,31 @@ public class HeapSort {
      * <p>前提条件: index 左右子树都满足最大堆</p>
      * <p>maxHeap 确保添加 index 后,仍然是最大堆</p>
      * @param values
-     * @param index
+     * @param index 堆节点序号,从1开始
+     * @param heapSize 堆大小 <= values.length
      * @return
      */
-    public static int[] maxHeap(int[] values, int index) {
-        int length = values.length;
+    public static void maxHeap(int[] values, int index, int heapSize) {
+        if (heapSize > values.length) {
+            throw new IllegalArgumentException("heapSize cannot bigger than length of values");
+        }
         int left = index << 1;
         int right = left + 1;
         
         int maxIndex = index;//最大值的索引
         
-        if (left <= length && values[left - 1] > values[maxIndex - 1]) {
+        if (left <= heapSize && values[left - 1] > values[maxIndex - 1]) {
             maxIndex = left;
         }
-        if (right <= length && values[right -1] > values[maxIndex - 1]) {
+        if (right <= heapSize && values[right -1] > values[maxIndex - 1]) {
             maxIndex = right;
         }
         if (maxIndex != index) {
             int tmp = values[index -1];
             values[index - 1] = values[maxIndex - 1];
             values[maxIndex - 1] = tmp;
-            return maxHeap(values, maxIndex);
+            maxHeap(values, maxIndex, heapSize);
         }
-        return values;
     }
     
     /**
@@ -56,13 +60,27 @@ public class HeapSort {
      * @param values
      * @return
      */
-    public static int[] buildMaxHeap(int[] values) {
+    public static void buildMaxHeap(int[] values) {
         int size = values.length / 2;
         //树形结构,自底向上,越大越底层
         for (int i = size; i >= 1; i--) {
-            values = maxHeap(values, i);
+            maxHeap(values, i, values.length);
         }
-        return values;
+    }
+    
+    public static void heapSort(int[] values) {
+        //构建最大堆
+        buildMaxHeap(values);
+        int heapSize = values.length;
+        while (heapSize > 1) {
+            //移动堆根节点
+            int max = values[0];
+            values[0] = values[heapSize - 1];
+            values[heapSize - 1] = max;
+            heapSize--;
+            //维持最大堆
+            maxHeap(values, 1, heapSize);
+        }
     }
 
 }
