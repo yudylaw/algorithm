@@ -20,7 +20,7 @@ public class HeapSort {
 //        int max = extractMax(values, heapSize);
 //        heapSort(values, heapSize);
 
-        increaseKey(values, heapSize, 5, 12);//7->12
+        insert(values, heapSize, 99);
         
         for (int value : values) {
             System.out.println(value);
@@ -98,15 +98,9 @@ public class HeapSort {
         if (heapSize >= values.length) {
             throw new IllegalArgumentException("heapSize cannot bigger than length of values");
         }
-        for (int i =0;i < heapSize;i++) {
-            if (val >= values[i]) {
-                
-            }
-        }
-        int max = values[0];
-        values[0] = val;
-        values[heapSize] = max;
-        maxHeap(values, 1, heapSize + 1);
+        //添加最小值,再 increase to val
+        values[heapSize] = Integer.MIN_VALUE;
+        increaseKey(values, heapSize + 1, heapSize + 1, val);
     }
     
     /**
